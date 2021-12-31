@@ -1,0 +1,141 @@
+---
+title: "Credit Risk"
+author: "Naufal Zhafran Albaqi"
+date: "12/25/2021"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Credit risk** adalah resiko yang harus ditanggung oleh seorang individu atau lembaga ketika memberikan pinjaman - biasanya dalam bentuk uang - ke individu atau pihak lain,resiko yang muncul berupa peminjam tidak dapat membayar pinjaman dan bunga.
+
+* **Kerugian**
+
+    *1.) gangguan aliran* 
+ 
+    *2.) meningkatkan biaya operasional*
+    
+    
+* **Cara Mengatasi**
+
+*1.) Credit Skoring*
+adalah nilai resiko yang diberikan kepada seorang individu atau  yang mengajukan pinjaman berdasarkan rekam jejak pinjaman dan pembayaran yang dilakukan. Nilai credit score biasanya memiliki rentang nilai 300 - 850. Semakin tinggi nilai yang didapatkan, maka semakin baik tingkat kemampuan seseorang atau sebuah lembaga untuk membayar pinjaman.
+    
+*2.) Creadit Rating*
+Terbalik dengan credit score, semakin tinggi rating ini menunjukkan resiko yang semakin meningkat, Selain itu kodifikasi juga dibuat lebih  simple dibandingkan rentang nilai sehingga keputusan yang bisa diambil lebih cepat  kategorisasi hanya menggunakan rentang angka yang kecil  misalkan 1 sampai dengan 5
+    
+### Aturan Model
+```{r test_label, wrapper=TRUE, eval=FALSE}
+Aturan_Model <- data.frame(
+  Jumlah_Tanggungan = c("< 5 Orang", "> 4 Orang", "< 5 Orang"),
+  durasi_Pinjam = c("< 24 Bulan", "> 24 Bulan", "< 36 BUlan"),
+  Keterangan= c("Diterima", "Ditolak", "Diterima")
+)
+print(Aturan_Model)
+```
+atau lebih lengkapnya dapat dilihat dari gambar di bawah in:
+![](C:\Naufal\Pribadi\Portofolio\Studi Kasus\R Studio\Screenshot (793).png) 
+
+
+### Library
+```{r cars}
+#Library
+library("openxlsx")  #Excel
+library("C50")       # Model yang di gunakan 
+library("reshape2")
+```
+### Import Data
+```{r label, wrapper=TRUE, eval=FALSE}
+##Data
+dataCreditRating <- read.xlsx(xlsxFile = "https://storage.googleapis.com/dqlab-dataset/credit_scoring_dqlab.xlsx")
+head(dataCreditRating)
+```
+### Pre-Processing Data
+Selanjutnya kita akan menampilkan deskripsi dari data:
+```{r aa, echo=FALSE}
+## Data
+## Type Data
+#print("Jenis Data:")
+#str(dataCreditRating)
+```
+Sesuai Dengan Model yang di tentukan sebelumnya, data yang kita gunakan hanya variabel **durasi_pinjaman_bulan** dan **jumlah_tanggungan** untuk menentukan *risk_rating*
+```{r bb, echo=FALSE}
+##  Membersihkan Data 
+drop_columns <- c("kpr_aktif","kode_kontrak", "pendapatan_setahun_juta", "risk_rating", "rata_rata_overdue")
+datafeed <- dataCreditRating[ , !(names(dataCreditRating) %in% drop_columns)]
+datafeed
+```
+karena variabel **risk_rating** masih berbentuk numerik maka akan di rubah menjadi bentuk katagorik sebagai berikut:
+
+```{r cc, echo=FALSE}
+## Transformasi Data
+dataCreditRating$risk_rating <- as.factor(dataCreditRating$risk_rating)
+str(dataCreditRating$risk_rating)
+```
+### Pembentukan Model
+menentukan *random seed = 100* agar pengacakan sama, dan membentuk **data train = 800** dan **data test = 100*
+```{r dd, echo=FALSE}
+## SEED
+set.seed(100) #untuk menyeragamkan hasil random antar tiap komputer
+## Sampling
+indeks_training_set <- sample(900, 800) #Sampling
+
+#Membuat dan menampilkan training set dan testing set
+input_training_set <- datafeed[indeks_training_set,]
+class_training_set <- dataCreditRating[indeks_training_set,]$risk_rating
+input_testing_set <- datafeed[-indeks_training_set,]
+
+str(input_training_set)
+str(class_training_set)
+str(input_testing_set)
+```
+
+```{r ee, echo=FALSE}
+##Model
+risk_rating_model <- C5.0(input_training_set, class_training_set, control = C5.0Control(label='Risk Rating'))
+summary(risk_rating_model)
+```
+Output tersebut menceritakan tingkat pentingnya penggunaan tiap variable. Disini jumlah_tanggungan menempati urutan pertama dengan nilai 100% dan durasi_pinjaman dengan 72.62%. Dengan tingkat error 22.5 persen, model ini harusnya cukup layak digunakan. Dari confusion matrix juga terlihat banyak sekali yang diprediksi dengan benar,
+### Plot hasil model 
+```{r ff, echo=FALSE}
+plot(risk_rating_model,)
+```
+### Prediksi
+```{r gg, echo=FALSE}
+#menggunakan model untuk prediksi testing set
+pred = predict(risk_rating_model, input_testing_set)
+input_testing_set['Risk_Rating'] <- pred
+print(input_testing_set)
+```
+hasil klasifikasi risk rating dapat dilihat pada tabel diatas, selanjutnya akan dilihat performa model dengan evaluasi matrik
+```{r hh, echo=FALSE}
+#menyimpan hasil prediksi testing set ke dalam kolom hasil_prediksi
+input_testing_set$risk_rating <- dataCreditRating[-indeks_training_set,]$risk_rating
+print(input_testing_set)
+```
+]hasil klasifikasi risk rating dapat dilihat pada tabel diatas, selanjutnya akan dilihat performa model dengan evaluasi matrik
+```{r ii, echo=FALSE}
+#membuat confusion matrix
+dcast(Risk_Rating ~ risk_rating, data=input_testing_set)
+```
+]hasil klasifikasi risk rating dapat dilihat pada tabel diatas, selanjutnya akan dilihat performa model dengan evaluasi matrik
+```{r jj, echo=FALSE}
+#Jumlah Prediksi benar 
+input_testing_set$risk_rating==input_testing_set$Risk_Rating
+```
+data set yang telah rapih :
+```{r kk, echo=FALSE}
+input_testing_set[input_testing_set$risk_rating==input_testing_set$Risk_Rating,]
+benar = nrow(input_testing_set[input_testing_set$risk_rating==input_testing_set$Risk_Rating,])
+salah = nrow(input_testing_set[input_testing_set$risk_rating!=input_testing_set$Risk_Rating,])
+print('jumlah prediksi benar:')
+print(benar) 
+print('jumlah prediksi salah:')
+print(salah)
+```
+setelah mengetahui model dan melakukan prediksi serta mengetahui seberapa baik model bekerja, maka selabjutnya akan dilakukan penerapan model kepada data baru 
