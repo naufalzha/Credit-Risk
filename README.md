@@ -18,4 +18,4 @@ Terbalik dengan credit score, semakin tinggi rating ini menunjukkan resiko yang 
 ## Contoh 
 #### Aturan model 
 atau lebih lengkapnya dapat dilihat dari gambar di bawah in:
-![](C:\Naufal\Pribadi\Portofolio\Studi Kasus\R Studio\Screenshot (793).png) 
+![gambar](https://github.com/naufalzha/Credit-Risk/blob/main/Screenshot%20(793).png) 
